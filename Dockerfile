@@ -47,9 +47,10 @@ RUN --mount=type=cache,id=grok2api-go-mod,target=/go/pkg/mod,sharing=locked \
 FROM alpine:${ALPINE_VERSION}
 
 ENV TZ=Asia/Shanghai \
-    GROK2API_CONFIG_SOURCE=/run/grok2api/config.yaml
+	GROK2API_CONFIG_SOURCE=/run/grok2api/config.yaml \
+	GROK2API_QUALITY_GUARD_DIR=/var/lib/grok2api-quality-guard
 
-RUN apk add --no-cache ca-certificates su-exec tzdata && \
+RUN apk add --no-cache ca-certificates python3 su-exec tzdata && \
     addgroup -S -g 10001 grok2api && \
     adduser -S -D -H -u 10001 -G grok2api grok2api && \
     mkdir -p /app/data /run/grok2api /var/lib/grok2api-quality-guard && \
@@ -64,6 +65,7 @@ WORKDIR /app
 COPY --from=backend-builder --chmod=0755 /out/grok2api /app/grok2api
 COPY --from=frontend-builder /src/frontend/dist /app/frontend/dist
 COPY VERSION /app/VERSION
+COPY --chmod=0755 tools/egress-quality-guard/quality_guard.py /usr/local/bin/grok2api-egress-quality-guard
 COPY --chmod=0755 docker/entrypoint.sh /usr/local/bin/grok2api-entrypoint
 
 EXPOSE 8000
